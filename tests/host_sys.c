@@ -9,11 +9,21 @@
 #include <mbedtls/platform_time.h>
 #include "wiiuupdate_internal.h"
 
+static pthread_t last_thread;
+static int have_thread;
+
+void wiiuupdate_sys_thread_join(void)
+{
+    if (!have_thread) return;
+    pthread_join(last_thread, NULL);
+    have_thread = 0;
+}
+
 int wiiuupdate_sys_thread(void *(*fn)(void *))
 {
-    pthread_t t;
-    if (pthread_create(&t, NULL, fn, NULL) != 0) return -1;
-    pthread_detach(t);
+    wiiuupdate_sys_thread_join();
+    if (pthread_create(&last_thread, NULL, fn, NULL) != 0) return -1;
+    have_thread = 1;
     return 0;
 }
 

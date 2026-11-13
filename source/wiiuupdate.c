@@ -17,6 +17,7 @@ static volatile int noticed;
 static volatile int running; /* a thread is alive, even after a cancel */
 static volatile int progress;
 static char owner[64], repo[96], current[48], latest[48], url[200], message[200];
+static int (*quit_check)(void);
 static char asset[1024], app_path[256], install_dir[384], install_error[160];
 
 static int start_thread(void *(*fn)(void *))
@@ -272,6 +273,21 @@ wiiuupdate_state WIIUUPDATE_Wait(int timeout_ms)
         wiiuupdate_sys_sleep_ms(10);
     }
     return state;
+}
+
+void WIIUUPDATE_SetQuitCheck(int (*should_quit)(void)) { quit_check = should_quit; }
+
+int wiiuupdate_should_quit(void) { return quit_check && quit_check(); }
+
+void WIIUUPDATE_Shutdown(void)
+{
+    cancelled = 1;
+    /* The HTTP code polls its socket in 250 ms slices and notices a cancel
+     * between them; allow a few slices, and a rename in the middle of
+     * unpacking, before giving up on a thread that is not responding. */
+    WIIUUPDATE_Wait(3000);
+    if (!running) wiiuupdate_sys_thread_join();
+    if (state == WIIUUPDATE_CHECKING) state = WIIUUPDATE_CANCELLED;
 }
 
 void WIIUUPDATE_Cancel(void)

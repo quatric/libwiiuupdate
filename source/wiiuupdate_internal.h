@@ -36,14 +36,22 @@ int wiiuupdate_extract(const char *zip_path, const char *app_dir, const char *ex
 /* The "apps/<Name>" folder name inside a zip, or "" if none. */
 int wiiuupdate_zip_app_name(const char *zip_path, char *out, size_t out_len);
 
+/* The quit check set with WIIUUPDATE_SetQuitCheck: non-zero when the app has
+ * been asked to quit. */
+int wiiuupdate_should_quit(void);
+
 /* Move src over dst: rename, or copy when the old file cannot be removed
  * (a running .wuhb can stay open). Returns 0 on success. */
 int wiiuupdate_replace(const char *src, const char *dst);
 
 /* ── Platform layer (wiiuupdate_sys.c; tests/host_sys.c on a desktop) ───── */
 
-/* Run fn on a new detached thread. Returns 0 when it started. */
+/* Run fn on a new background thread, below the app's own priority so a check
+ * never takes time from its frame loop. A previous thread that has finished
+ * is reaped first. Returns 0 when it started. */
 int wiiuupdate_sys_thread(void *(*fn)(void *));
+/* Wait for the thread to end; only call it once it has set its done flag. */
+void wiiuupdate_sys_thread_join(void);
 unsigned long long wiiuupdate_sys_ms(void);
 void wiiuupdate_sys_sleep_ms(int ms);
 /* Connect to the network if needed. Returns 0 when it is usable. */

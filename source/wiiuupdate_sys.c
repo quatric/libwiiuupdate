@@ -4,6 +4,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <coreinit/thread.h>
 #include <coreinit/time.h>
 #include <coreinit/dynload.h>
 #include <nn/ac.h>
@@ -12,15 +13,37 @@
 
 #define STACK_SIZE (128 * 1024)
 
+/* Cafe OS priorities run 0 (first) to 31 and apps start their main thread at
+ * 16: below it, the check only runs while the app is idle or waiting for vsync. */
+#define THREAD_PRIORITY 24
+
+static pthread_t last_thread;
+static int have_thread;
+static void *(*thread_fn)(void *);
+
+static void *thread_main(void *arg)
+{
+    OSSetThreadPriority(OSGetCurrentThread(), THREAD_PRIORITY);
+    return thread_fn(arg);
+}
+
+void wiiuupdate_sys_thread_join(void)
+{
+    if (!have_thread) return;
+    pthread_join(last_thread, NULL);
+    have_thread = 0;
+}
+
 int wiiuupdate_sys_thread(void *(*fn)(void *))
 {
-    pthread_t t;
+    wiiuupdate_sys_thread_join(); /* the last thread has set its flag and is returning */
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, STACK_SIZE);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    int ret = pthread_create(&t, &attr, fn, NULL);
+    thread_fn = fn;
+    int ret = pthread_create(&last_thread, &attr, thread_main, NULL);
     pthread_attr_destroy(&attr);
+    if (ret == 0) have_thread = 1;
     return ret;
 }
 

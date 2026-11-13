@@ -9,6 +9,8 @@
 #include <whb/log_console.h>
 #include <wiiuupdate.h>
 
+static int should_quit(void) { return !WHBProcIsRunning(); }
+
 #define OWNER   "quatric"
 #define REPO    "PictoChat-Client"
 #define VERSION "0.0.1"
@@ -19,6 +21,7 @@ int main(void)
     WHBLogConsoleInit();
     WHBLogPrintf("libwiiuupdate example: %s/%s, running %s", OWNER, REPO, VERSION);
     WHBLogConsoleDraw();
+    WIIUUPDATE_SetQuitCheck(should_quit); /* HOME stops a download at once */
     WIIUUPDATE_Start(OWNER, REPO, VERSION);
 
     wiiuupdate_popup pop;
@@ -51,8 +54,7 @@ int main(void)
         OSSleepTicks(OSMillisecondsToTicks(16));
     }
 
-    WIIUUPDATE_Cancel();
-    WIIUUPDATE_Wait(5000);
+    WIIUUPDATE_Shutdown(); /* nothing may still be on the network or the SD card when main returns */
     WHBLogConsoleFree();
     WHBProcShutdown();
     return 0;

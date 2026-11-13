@@ -100,6 +100,11 @@ read `/vol/content` any more; exit as soon as the popup says it is done.
 * `WIIUUPDATE_State()`: `CHECKING`, `UP_TO_DATE`, `AVAILABLE`, `FAILED` or `CANCELLED`.
 * `WIIUUPDATE_Wait(ms)`: block until the check (or install) is done.
 * `WIIUUPDATE_Cancel()`: drop the result, or stop a download.
+* `WIIUUPDATE_Shutdown()`: cancel and wait for the thread; call it when the app is asked to quit (HOME) and before `main` returns, so nothing is still using the network or the SD card when the system tears the app down.
+* `WIIUUPDATE_SetQuitCheck(fn)`: a function (e.g. `!WHBProcIsRunning()`) that downloads and the console helper poll, so HOME stops them at once.
+* `WIIUUPDATE_CheckConsole(owner, repo, version, buttons_down)`: for text apps on libwhb's log console. Prints one line, lets B skip, and only stops when a newer version is out; returns `WIIUUPDATE_UPDATED` after an install. `buttons_down` returns `VPAD_BUTTON_*` bits, or pass `NULL` to read the GamePad.
+
+The check and install threads run below the app's main thread (priority 24) so they never take time from a frame loop.
 * `WIIUUPDATE_Latest()`, `WIIUUPDATE_Current()`, `WIIUUPDATE_Url()`, `WIIUUPDATE_CompareVersions(a, b)`.
 * `WIIUUPDATE_InstallDir()`: the folder the update went to.
 

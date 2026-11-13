@@ -46,6 +46,7 @@ static int wait_fd(conn_t *c, int events)
 {
     /* Poll in short slices so a cancel is noticed quickly. */
     for (int waited = 0; waited < TIMEOUT_MS; waited += 250) {
+        if (!*c->cancel && wiiuupdate_should_quit()) *c->cancel = 1; /* HOME: stop at once */
         if (*c->cancel) return -1;
         struct pollfd p = { .fd = c->fd, .events = events, .revents = 0 };
         int ret = poll(&p, 1, 250);

@@ -14,6 +14,14 @@
  * WIIUUPDATE_Progress(). The release's zip (or .wuhb) is streamed to the SD
  * card, then unpacked over the app's folder. Once it reports
  * WIIUUPDATE_INSTALL_DONE the app should exit back to the Wii U Menu.
+ *
+ * HOME: the Wii U sends the app to the background and expects it to quit
+ * promptly when asked. Call WIIUUPDATE_Shutdown() when the app is asked to
+ * quit (WHBProcIsRunning() turns false) and before main returns: it stops any
+ * check or download and waits for the thread, so nothing is still on the
+ * network or the SD card when the system tears the app down.
+ * WIIUUPDATE_SetQuitCheck() lets downloads and the blocking console helper
+ * give up on their own at that moment.
  */
 #ifndef WIIUUPDATE_H
 #define WIIUUPDATE_H
@@ -31,6 +39,8 @@ typedef enum {
     WIIUUPDATE_AVAILABLE,    /* WIIUUPDATE_Latest() is newer */
     WIIUUPDATE_FAILED,       /* no network, TLS or HTTP error, bad reply */
     WIIUUPDATE_CANCELLED,    /* WIIUUPDATE_Cancel was called */
+    WIIUUPDATE_UPDATED,      /* only from WIIUUPDATE_CheckConsole: the update was
+                                installed; exit to the Wii U Menu */
 } wiiuupdate_state;
 
 typedef enum {
@@ -91,6 +101,16 @@ const char *WIIUUPDATE_InstallError(void);
 /* The folder the update was installed to. */
 const char *WIIUUPDATE_InstallDir(void);
 
+/* Cancel whatever is running and wait (up to about 3 seconds) for the thread
+ * to end. Call it when the app is asked to quit and always before returning
+ * from main. Safe to call twice, and when nothing was started. */
+void WIIUUPDATE_Shutdown(void);
+
+/* A function the downloads and WIIUUPDATE_CheckConsole poll; when it returns
+ * non-zero they cancel and return at once. Typically
+ * `static int quit(void) { return !WHBProcIsRunning(); }`. */
+void WIIUUPDATE_SetQuitCheck(int (*should_quit)(void));
+
 /* Ready-made popup logic for GUI apps. Call once per frame with the
  * VPAD_BUTTON_* bits pressed this frame (map other controllers onto them);
  * while it returns OPEN, draw a box from *popup and keep the buttons away from
@@ -110,6 +130,18 @@ int WIIUUPDATE_Popup(uint32_t buttons_down, wiiuupdate_popup *popup);
 /* Compare two version strings numerically ("v1.10" > "1.9.2"). Leading text
  * before the first digit is skipped. Returns <0, 0 or >0. */
 int WIIUUPDATE_CompareVersions(const char *a, const char *b);
+
+/* Console helper for text apps on libwhb's log console (the app must have
+ * called WHBLogConsoleInit): prints "Checking for updates..." and redraws the
+ * console while it waits. buttons_down returns VPAD_BUTTON_* bits pressed this
+ * frame (map other controllers onto them); pass NULL to have the library read
+ * the GamePad itself. B skips the check. When an update is available it offers
+ * "A: update now, B: later" (later is picked after 20 seconds). Returns
+ * WIIUUPDATE_UPDATED once a new version was installed and the user pressed A;
+ * the app should then exit. Returns WIIUUPDATE_CANCELLED when skipped, timed
+ * out, or when the quit check fires. */
+wiiuupdate_state WIIUUPDATE_CheckConsole(const char *owner, const char *repo, const char *current_version,
+                                         uint32_t (*buttons_down)(void));
 
 #ifdef __cplusplus
 }
