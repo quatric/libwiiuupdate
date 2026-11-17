@@ -85,6 +85,13 @@ const char *WIIUUPDATE_Message(void);
  * either, updates go to wiiu/apps/<folder named in the zip>/ on the SD card. */
 void WIIUUPDATE_SetAppPath(const char *path);
 
+/* When one repository releases several apps, only install the release asset
+ * whose file name contains `word` (case-insensitive), e.g. "SheepShaver" for
+ * SheepShaverWiiU-1.2.0-wiiu.zip next to OtherAppWiiU-1.2.0-wiiu.zip. Call
+ * before WIIUUPDATE_Start. The string is not copied and must stay valid.
+ * NULL or "" (the default) considers every asset. */
+void WIIUUPDATE_SetAssetName(const char *word);
+
 /* 1 when an update was found and its release has an installable asset (a
  * Wii U zip, or a .wuhb / .rpx). */
 int WIIUUPDATE_CanInstall(void);

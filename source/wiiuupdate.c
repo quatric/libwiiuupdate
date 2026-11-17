@@ -225,6 +225,11 @@ static void *install_thread(void *arg)
     return NULL;
 }
 
+void WIIUUPDATE_SetAssetName(const char *word)
+{
+    wiiuupdate_asset_name = word;
+}
+
 void WIIUUPDATE_SetAppPath(const char *path)
 {
     app_path[0] = 0;

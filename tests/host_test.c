@@ -72,6 +72,19 @@ int main(int argc, char **argv)
     CHECK(wiiuupdate_release_asset(rel, "v0.9", asset, sizeof asset) < 0);
     CHECK(wiiuupdate_release_asset(rel, "v2", asset, sizeof asset) < 0);
 
+    /* Several apps in one release: each takes its own. */
+    const char *apps = "[{\"tag_name\":\"v3.0\",\"assets\":["
+                       "{\"browser_download_url\":\"https://x/BasiliskIIWiiU-3.0-wiiu.zip\"},"
+                       "{\"browser_download_url\":\"https://x/SheepShaverWii-3.0-hbc.zip\"},"
+                       "{\"browser_download_url\":\"https://x/SheepShaverWiiU-3.0-wiiu.zip\"}]}]";
+    wiiuupdate_asset_name = "sheepshaver";
+    CHECK(wiiuupdate_release_asset(apps, "v3.0", asset, sizeof asset) == 0 && !strcmp(asset, "https://x/SheepShaverWiiU-3.0-wiiu.zip"));
+    wiiuupdate_asset_name = "BasiliskII";
+    CHECK(wiiuupdate_release_asset(apps, "v3.0", asset, sizeof asset) == 0 && !strcmp(asset, "https://x/BasiliskIIWiiU-3.0-wiiu.zip"));
+    wiiuupdate_asset_name = "Other";
+    CHECK(wiiuupdate_release_asset(apps, "v3.0", asset, sizeof asset) < 0);
+    wiiuupdate_asset_name = NULL;
+
     /* Unpack: only wiiu/apps/<Name>/ lands in the app folder, nothing escapes it. */
     const char *zip = "build/test.zip";
     static const char *const entries[] = {

@@ -81,7 +81,10 @@ so one release can carry the Wii, Wii U and 3DS builds side by side.
 
 The target is the running app's own file. Under Aroma the library asks the
 RPX loader where that is (`RL_GetPathOfRunningExecutable`, looked up at run
-time, so nothing extra is linked); `WIIUUPDATE_SetAppPath()` overrides it.
+time, so nothing extra is linked); `WIIUUPDATE_SetAppPath()` overrides it. A repository that releases several
+apps tells each one which asset is its own:
+`WIIUUPDATE_SetAssetName("SheepShaver")` only installs assets whose file name
+contains that word (case-insensitive).
 The zip's `wiiu/apps/<Name>/` folder is unpacked into that file's folder, and
 the zip's `.wuhb` is written under the running file's name, so a copy that
 was renamed or moved out of its folder is still updated in place rather than

@@ -113,6 +113,9 @@ static int asset_score(const char *name, size_t len)
     return 0;
 }
 
+/* Set by WIIUUPDATE_SetAssetName: only assets whose file name contains it */
+const char *wiiuupdate_asset_name = NULL;
+
 /* Pick the asset of release `tag` to install: a Wii U zip, a .wuhb, a zip
  * that names no other console, or an .rpx, in that order. */
 int wiiuupdate_release_asset(const char *json, const char *tag, char *out, size_t out_len)
@@ -143,6 +146,10 @@ int wiiuupdate_release_asset(const char *json, const char *tag, char *out, size_
         const char *name = p + len;
         while (name > p && name[-1] != '/') name--;
         int score = asset_score(name, (size_t)(q - name));
+        /* A release with several apps: only this app's files. */
+        if (wiiuupdate_asset_name && wiiuupdate_asset_name[0]
+            && !contains(name, (size_t)(q - name), wiiuupdate_asset_name))
+            score = 0;
         if (score > best && len < out_len) {
             memcpy(out, p, len);
             out[len] = 0;

@@ -19,6 +19,7 @@ int wiiuupdate_newest_tag(const char *json, char *out, size_t out_len);
 
 /* Download URL of the asset to install for release `tag`: a Wii U zip, else
  * a .wuhb, else an .rpx. Assets named for other consoles are skipped. */
+extern const char *wiiuupdate_asset_name;
 int wiiuupdate_release_asset(const char *json, const char *tag, char *out, size_t out_len);
 
 /* Unpack a zip into app_dir. Entries under ".../apps/<Name>/" land in app_dir;
